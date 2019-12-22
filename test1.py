@@ -4,8 +4,7 @@ os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import *
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
 
@@ -13,11 +12,11 @@ from tensorflow.keras.models import Model
 import tensorflow.keras.backend as K
 import tensorflow.keras
 
-import numpy
+import numpy as np
 import pandas as pd
 #import argparse
 
-numpy.random.seed( 0 )
+np.random.seed( 0 )
 
 ########
 # PLAN #
@@ -36,47 +35,42 @@ max_features = 10
 
 # Layers
 model = Sequential()
-model.add( Embedding( max_features, 128 ) )
-model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
-model.add(Dense(1, activation=None))
+#model.add( LSTM( 10, input_shape=( None, 5, 1 ) ) )
+model.add( LSTM( 10, input_shape=( 5, 1 ) ) )
+model.add( Dense( 3, activation='sigmoid' ) )
 
 #https://keras.io/examples/imdb_lstm/
 
 metrics_to_output=[ 'binary_accuracy' ]
 model.compile( loss='binary_crossentropy', optimizer='adam', metrics=metrics_to_output )
-model.summary()
+#model.summary()
 
+train_input = []
+train_output = []
 
+# Output is one of 3 classes: increasing, up-down, or decreasing
 
-#############
-# CALLBACKS #
-#############
+# Input is >0, -1.0 denotes blank space
 
-csv_logger = tensorflow.keras.callbacks.CSVLogger( "training_log.csv", separator=',', append=False )
-# Many fun options: https://keras.io/callbacks/
-def schedule( epoch, lr ):
-    if lr < 0.0001:
-        return lr * 2
-    return lr * 0.9
-lrs = tensorflow.keras.callbacks.LearningRateScheduler(schedule, verbose=0)
+train_input.append( [ [ 0.0 ], [ 0.5 ], [ 1.0 ], [ -1.0 ], [ -1.0 ] ] )
+train_output.append( [ 0, 0, 1 ] )
 
-chkpt = tensorflow.keras.callbacks.ModelCheckpoint("checkpoint.{epoch:02d}.h5", monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+train_input.append( [ [ 0.0 ], [ 2.0 ], [ 0.5 ], [ -1.0 ], [ -1.0 ] ] )
+train_output.append( [ 0, 1, 0 ] )
 
+train_input.append( [ [ 0.0 ], [ 0.5 ], [ 1.0 ], [ 5.0 ], [ 10.0 ] ] )
+train_output.append( [ 0, 0, 1 ] )
 
-callbacks=[csv_logger,lrs,chkpt]
+train_input.append( [ [ 5.0 ], [ 2.0 ], [ -1.0 ], [ -1.0 ], [ -1.0 ] ] )
+train_output.append( [ 1, 0, 0 ] )
 
-#########
-# TRAIN #
-#########
+train_input.append( [ [ 5.0 ], [ 2.0 ], [ 1.0 ], [ 0.5 ], [ 0.0 ] ] )
+train_output.append( [ 1, 0, 0 ] )
 
-class_weight = {0: 1.,
-                1: 200.}
+train_input.append( [ [ 10.0 ], [ 2.0 ], [ 1.0 ], [ 0.5 ], [ 0.0 ] ] )
+train_output.append( [ 1, 0, 0 ] )
 
-model.fit( x=input, y=output, batch_size=64, epochs=10, verbose=1, callbacks=callbacks, validation_data=(test_input,test_output), shuffle=True, class_weight=class_weight )
+my_input = np.asarray( train_input )
+my_output = np.asarray( train_output )
 
-
-#############
-# SPIN DOWN #
-#############
-
-model.save( args.model )
+model.fit( x=my_input, y=my_output, batch_size=1, epochs=10 )
