@@ -74,3 +74,9 @@ my_input = np.asarray( train_input )
 my_output = np.asarray( train_output )
 
 model.fit( x=my_input, y=my_output, batch_size=1, epochs=10 )
+
+
+predictions = model.predict( my_input )
+
+for i in range( 0, len( my_output ) ):
+    print( "Predicted ", predictions[i], " instead of ", my_output[ i ] )
